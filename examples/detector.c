@@ -573,7 +573,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     char buff[256];
     char *input = buff;
     float nms=.45;
-    while(1){
+    //while(1){
         if(filename){
             strncpy(input, filename, 256);
         } else {
@@ -607,17 +607,17 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             save_image(im, outfile);
         }
         else{
-            save_image(im, "predictions");
+            save_image(im, "predictions-test");
 #ifdef OPENCV
-            make_window("predictions", 512, 512, 0);
-            show_image(im, "predictions", 0);
+            make_window("predictions-test", 512, 512, 0);
+            show_image(im, "predictions-test", 0);
 #endif
         }
 
         free_image(im);
         free_image(sized);
-        if (filename) break;
-    }
+        //if (filename) break;
+    //}
 }
 
 /*

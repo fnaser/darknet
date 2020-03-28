@@ -1,6 +1,7 @@
 #include "darknet.h"
 
 #include <time.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -435,6 +436,45 @@ int main(int argc, char **argv)
         char *outfile = find_char_arg(argc, argv, "-out", 0);
         int fullscreen = find_arg(argc, argv, "-fullscreen");
         test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen);
+
+    } else if (0 == strcmp(argv[1], "detect_folder")){
+        float thresh = find_float_arg(argc, argv, "-thresh", .5);
+        int fullscreen = find_arg(argc, argv, "-fullscreen");
+        char *dir = (argc > 4) ? argv[4]: 0;
+        printf("Input folder: %s\n", dir);
+
+        // https://www.bfilipek.com/2019/04/dir-iterate.html
+        struct dirent *entry;
+        DIR *dp;
+
+        if ((dp = opendir(dir)) == NULL) {
+            fprintf(stderr, "Can't open %s\n", dir);
+            return 0;
+        }
+
+        while ((entry = readdir(dp))) {
+            if (entry->d_type == 8) {
+                char path_to_file[255];
+                path_to_file[0] = '\0';
+                strcat(path_to_file, dir);
+                strcat(path_to_file, entry->d_name);
+                printf("Input img: %s\n", path_to_file);
+
+                char path_to_prediction[255];
+                path_to_prediction[0] = '\0';
+                strcat(path_to_prediction, "./results/imgs/");
+                entry->d_name[strlen(entry->d_name)-5] = '\0';
+                strcat(path_to_prediction, entry->d_name);
+
+                char *filename = path_to_file;
+                // char *outfile = find_char_arg(argc, argv, "-out", 0);
+                char *outfile = path_to_prediction;
+                test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen);
+            }
+        }
+
+        closedir(dp);
+
     } else if (0 == strcmp(argv[1], "cifar")){
         run_cifar(argc, argv);
     } else if (0 == strcmp(argv[1], "go")){
