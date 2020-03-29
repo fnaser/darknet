@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 extern void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *filename, int top);
-extern void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen);
+extern void test_detector(char **names, image **alphabet, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen, network *net);
 extern void run_yolo(int argc, char **argv);
 extern void run_detector(int argc, char **argv);
 extern void run_coco(int argc, char **argv);
@@ -435,7 +435,7 @@ int main(int argc, char **argv)
         char *filename = (argc > 4) ? argv[4]: 0;
         char *outfile = find_char_arg(argc, argv, "-out", 0);
         int fullscreen = find_arg(argc, argv, "-fullscreen");
-        test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen);
+        //test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen);
 
     } else if (0 == strcmp(argv[1], "detect_folder")){
         float thresh = find_float_arg(argc, argv, "-thresh", .5);
@@ -452,15 +452,23 @@ int main(int argc, char **argv)
             return 0;
         }
 
+        list *options = read_data_cfg("cfg/coco.data");
+        char *name_list = option_find_str(options, "names", "data/names.list");
+        char **names = get_labels(name_list);
+        image **alphabet = load_alphabet();
+        network *net = load_network(argv[2], argv[3], 0);
+        set_batch_network(net, 1);
+
+        int counter = 0;
         while ((entry = readdir(dp))) {
             if (entry->d_type == 8) {
-                char path_to_file[255];
+                char path_to_file[256];
                 path_to_file[0] = '\0';
                 strcat(path_to_file, dir);
                 strcat(path_to_file, entry->d_name);
                 printf("Input img: %s\n", path_to_file);
 
-                char path_to_prediction[255];
+                char path_to_prediction[256];
                 path_to_prediction[0] = '\0';
                 strcat(path_to_prediction, "./results/imgs/");
                 entry->d_name[strlen(entry->d_name)-5] = '\0';
@@ -469,9 +477,11 @@ int main(int argc, char **argv)
                 char *filename = path_to_file;
                 // char *outfile = find_char_arg(argc, argv, "-out", 0);
                 char *outfile = path_to_prediction;
-                test_detector("cfg/coco.data", argv[2], argv[3], filename, thresh, .5, outfile, fullscreen);
+                test_detector(names, alphabet, filename, thresh, .5, outfile, fullscreen, net);
+                counter++;
             }
         }
+        printf("Counter: %d\n", counter);
 
         closedir(dp);
 
